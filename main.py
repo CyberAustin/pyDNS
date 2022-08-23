@@ -22,28 +22,52 @@ while (True):
     print(f'Questions: {int.from_bytes(message[3:4], "big")}')
 
     fqdn = ''
-    i = 13
-
+    i = 12
+    fqdn_with_count = ''
     while message[i] != 0:
+        fqdn_with_count += chr(message[i])
+        if i == 12:
+            i += 1
+            continue
         if message[i] <= 32:
-            fqdn = fqdn + '.'
+            fqdn += '.'
         else:
-            fqdn = fqdn + chr(message[i])
-        i = i + 1
+            fqdn += chr(message[i])
+        i += 1
 
+    #Header ID Field
     reply = ID.to_bytes(2, "big")
 
-    reply += (131).to_bytes(1, "big")
-    reply += (0).to_bytes(3, "big")
-    reply += (1).to_bytes(2, "big")
-    reply += (0).to_bytes(4, "big")
-    reply += str.encode(fqdn)
-    reply += bytes(64 - len(str.encode(fqdn)))
+    #Header Flags
+    reply += (0b10000001).to_bytes(1,"big")
+    reply += (0b10000000).to_bytes(1,"big")
+    
     reply += (1).to_bytes(2, "big")
     reply += (1).to_bytes(2, "big")
-    reply += (10000).to_bytes(4, "big")
-    reply += (len("192.168.2.5")).to_bytes(2, "big")
-    reply += str.encode("192.168.2.5") + bytes(32 - len("192.168.2.5"))
+    #print((1).to_bytes(2,"big"))
+    
+    reply += (0).to_bytes(2, "big")
+    reply += (1).to_bytes(2, "big")
+    reply += str.encode(fqdn_with_count)
+    reply += (0).to_bytes(1, "big")
+    reply += (1).to_bytes(2, "big")
+    reply += (1).to_bytes(2, "big")
+    #print(f'fqdn len: {len(str.encode(fqdn))}')
+    #reply += bytes(64 - len(str.encode(fqdn)))
+    reply += (0xc00c).to_bytes(2, "big")
+    reply += (1).to_bytes(2, "big")
+    reply += (1).to_bytes(2, "big")
+    reply += (5).to_bytes(4, "big")
+    reply += (4).to_bytes(2, "big")
+
+    #ip address
+    reply += (192).to_bytes(1, "big")
+    reply += (168).to_bytes(1, "big")
+    reply += (5).to_bytes(1, "big")
+    reply += (8).to_bytes(1, "big")
+    reply += (0x0000290fa0000000050000).to_bytes(11, "big")
+
+    
     print(f'\n\n{reply}')
 
     UDPServer.sendto(reply, address)
